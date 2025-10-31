@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
 require "test_helper"
-require "crush/utils/flows/pulse/weekly_pulse"
+require "crush/utils/gitlab_client"
 require "net/http"
 
 class GitlabClientTest < Minitest::Test
-  GitlabClient = Crush::Utils::Flows::Pulse::WeeklyPulse::GitlabClient
+  GitlabClient = Crush::Utils::GitlabClient
 
   def setup
     @client = GitlabClient.new(base_url: "https://gitlab.example.com", token: "secret", per_page: 2)
