@@ -109,7 +109,7 @@ class WeeklyPulseFlowTest < Minitest::Test
         ["Generated summary #{captured_prompts.length}", "", status]
       end) do
         Crush::Utils.stub(:log_dir, log_root) do
-          WeeklyPulse::GitlabClient.stub(:new, ->(**_opts) { fake_client }) do
+          Crush::Utils::GitlabClient.stub(:new, ->(**_opts) { fake_client }) do
             flow = WeeklyPulse.new(
               argv: [],
               config: {
