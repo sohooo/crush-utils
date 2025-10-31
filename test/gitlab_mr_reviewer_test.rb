@@ -129,9 +129,13 @@ class GitlabMrReviewerTest < Minitest::Test
       stderr: ""
     }
 
-    capture_io do
-      flow.stub(:run_crush, ->(*_args) { crush_output }) do
-        flow.call
+    log_root = Pathname(@tmpdir).join("logs")
+
+    Crush::Utils.stub(:log_dir, log_root) do
+      capture_io do
+        flow.stub(:run_crush, ->(*_args) { crush_output }) do
+          flow.call
+        end
       end
     end
 
@@ -160,6 +164,14 @@ class GitlabMrReviewerTest < Minitest::Test
     raw_project = review_dir.join("raw", "project.json")
     assert_path_exists raw_project
     assert_equal project["id"], JSON.parse(raw_project.read).fetch("id")
+
+    session_file = Dir[log_root.join("sessions", "gitlab.mr_reviewer", "*.json")].first
+    refute_nil session_file
+    session_payload = JSON.parse(File.read(session_file))
+    assert_equal "gitlab.mr_reviewer", session_payload.fetch("flow")
+    assert_equal mr_url, session_payload.dig("inputs", "merge_request_url")
+    assert_equal markdown_path.to_s, session_payload.dig("outputs", "review_path")
+    assert_equal json_path.to_s, session_payload.dig("metadata", "results_path")
 
     assert_equal [
       [

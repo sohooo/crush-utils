@@ -170,8 +170,20 @@ module Crush
               "outputs" => outputs
             })
 
+            session_path = session_logger.persist!(
+              timestamp: clock.now,
+              inputs: inputs,
+              outputs: outputs,
+              metadata: {
+                "results_path" => results_path.to_s,
+                "aggregate_path" => aggregate_path.to_s,
+                "diff_path" => diff_path.to_s
+              }
+            )
+
             puts "✓ Review saved to #{review_path}"
             puts "✓ Inputs/outputs saved to #{results_path}"
+            puts "✓ Session logged to #{session_path}"
 
             {
               review_path: review_path,
@@ -342,6 +354,10 @@ module Crush
             raise "Crush command failed: #{stderr}" unless status.success?
 
             { command: command, stdout: stdout, stderr: stderr }
+          end
+
+          def session_logger
+            @session_logger ||= Crush::Utils::Session.new(flow_name: FLOW_NAME, clock: clock)
           end
 
           def load_env_if_needed

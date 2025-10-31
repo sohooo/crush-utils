@@ -63,8 +63,6 @@ module Crush
 
             overall = overall_summary(group_results, window, cfg)
 
-            timestamp = @clock.now.utc.strftime("%Y-%m-%d_%H%M%S")
-            flow_log_dir = Crush::Utils.log_dir.join("pulse", "weekly")
             inputs = {
               "gitlab_base" => cfg[:gitlab_base],
               "groups" => cfg[:groups],
@@ -92,7 +90,11 @@ module Crush
                 "mattermost_response_code" => overall[:mattermost_response_code]
               }
             }
-            log_path = log_results(flow_log_dir, timestamp, inputs, outputs)
+            log_path = session_logger.persist!(
+              timestamp: @clock.now,
+              inputs: inputs,
+              outputs: outputs
+            )
             puts "✓ Logged run: #{log_path}"
           end
 
@@ -382,19 +384,8 @@ module Crush
             }
           end
 
-          def log_results(flow_log_dir, timestamp, inputs, outputs)
-            ensure_directories(flow_log_dir)
-            log_path = flow_log_dir.join("#{timestamp}.json")
-            log_path.write(
-              JSON.pretty_generate(
-                {
-                  "timestamp" => timestamp,
-                  "inputs" => inputs,
-                  "outputs" => outputs
-                }
-              )
-            )
-            log_path
+          def session_logger
+            @session_logger ||= Crush::Utils::Session.new(flow_name: FLOW_NAME, clock: @clock)
           end
 
         end
