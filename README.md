@@ -7,6 +7,6 @@ Reusable automations and supporting assets for running Charm's Crush workflows. 
 ### Pulse (GitLab weekly reports)
 - Location: `flows/pulse`
 - Generates weekly GitLab group activity summaries (per-group and overall) using the shared `.env` configuration, GitLab APIs, and Crush for automated write-ups.
-- Run with `./flows/pulse/weekly-pulse.sh` after populating `.env` with your GitLab credentials (keep real tokens out of source control).
+- Run with `ruby ./flows/pulse/weekly-pulse.rb` after populating `.env` with your GitLab credentials (keep real tokens out of source control).
 
 More flows will be added over time, reusing the same global `.env` file for shared environment variables.
