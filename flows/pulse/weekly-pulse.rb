@@ -15,7 +15,7 @@ module Pulse
   module_function
 
   def script_dir
-    @script_dir ||= Pathname.new(__dir__).expand_path
+    @script_dir ||= Pathname(__dir__).expand_path
   end
 
   def repo_root
@@ -50,14 +50,14 @@ module Pulse
     gitlab_token = ENV['GITLAB_TOKEN']
     raise 'Set GITLAB_TOKEN via the environment or .env file' if gitlab_token.nil? || gitlab_token.empty?
 
-    groups = (ENV['GROUPS'] || 'dbsys').split(/\s+/).reject(&:empty?)
+    groups = (ENV['GROUPS'] || 'dbsys').split(',').map(&:strip).reject(&:empty?)
 
     {
       gitlab_base: gitlab_base,
       gitlab_token: gitlab_token,
       groups: groups,
-      out_root: Pathname.new(ENV['OUT_ROOT'] || script_dir.join('reports').to_s).expand_path,
-      crush_config: Pathname.new(ENV['CRUSH_CONFIG'] || script_dir.join('.crush', 'lead.crush.json').to_s).expand_path,
+      out_root: Pathname(ENV['OUT_ROOT'] || script_dir.join('reports')).expand_path,
+      crush_config: Pathname(ENV['CRUSH_CONFIG'] || script_dir.join('.crush', 'lead.crush.json')).expand_path,
       mattermost_webhook: ENV['MATTERMOST_WEBHOOK'],
       per_page: (ENV['PER_PAGE'] || '100').to_i,
       date: Date.today
@@ -196,12 +196,12 @@ module Pulse
 
   def ensure_directories(*paths)
     paths.each do |path|
-      Pathname.new(path).mkpath
+      Pathname(path).mkpath
     end
   end
 
   def write_json(path, data)
-    Pathname.new(path).write(JSON.pretty_generate(data))
+    Pathname(path).write(JSON.pretty_generate(data))
   end
 
   def generate_group_stats(group_dir, commits_all, pipelines_all, issues, merge_requests)
