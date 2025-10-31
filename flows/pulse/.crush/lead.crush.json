@@ -1,16 +1,16 @@
 {
   "$schema": "https://charm.land/crush.json",
-  "session_name": "WeeklyPulse",
+  "session_name": "$CRUSH_WORKFLOW_SESSION_NAME",
   "providers": {
     "lab-vllm": {
-      "name": "Lab vLLM",
-      "type": "openai-compat",
-      "base_url": "https://assist.lab.dev/v1",
-      "api_key": "dummy",
+      "name": "$CRUSH_PROVIDER_NAME",
+      "type": "$CRUSH_PROVIDER_TYPE",
+      "base_url": "$CRUSH_PROVIDER_BASE_URL",
+      "api_key": "$CRUSH_PROVIDER_API_KEY",
       "models": [
         {
-          "id": "Qwen2.5-Coder-7B-Instruct",
-          "name": "Qwen Coder (lab)",
+          "id": "$CRUSH_MODEL_ID",
+          "name": "$CRUSH_MODEL_NAME",
           "context_window": 131072,
           "default_max_tokens": 12000
         }
@@ -23,11 +23,11 @@
     "debug": false,
     "tui": { "compact_mode": true },
     "context_paths": [
-      "../reports"
+      "$CRUSH_CONTEXT_PATH"
     ]
   },
   "permissions": {
     "allowed_tools": ["view", "grep", "edit"]
   },
-  "initial_prompt": "You are an engineering lead assistant. You analyze GitLab JSON activity (issues, MRs, commits, pipelines) for a weekly window and produce concise, actionable Markdown: highlights, themes, risks/blockers, notable contributors (by impact), CI health, and next-week focus. Prefer bullet points, name contributors, and reference projects where useful."
+  "initial_prompt": "$CRUSH_INITIAL_PROMPT"
 }
