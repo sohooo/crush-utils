@@ -1,0 +1,14 @@
+/.bundle/
+/log/*.log
+/log/*.json
+!/log/.keep
+/reports/*
+!/reports/pulse/
+!/reports/.keep
+!/reports/pulse/.keep
+/pkg/
+/tmp/
+*.gem
+Gemfile.lock
+.DS_Store
+/.env
