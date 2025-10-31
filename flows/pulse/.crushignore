@@ -1,0 +1,8 @@
+**/.git/
+**/*.png
+**/*.jpg
+**/*.gif
+**/*.csv
+node_modules/
+dist/
+vendor/
