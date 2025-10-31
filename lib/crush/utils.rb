@@ -13,7 +13,11 @@ module Crush
     class << self
       def loader
         @loader ||= Zeitwerk::Loader.for_gem.tap do |loader|
-          loader.inflector.inflect("cli" => "CLI")
+          loader.inflector.inflect(
+            "cli" => "CLI",
+            "mcp" => "MCP",
+            "gitlab_mcp" => "GitlabMCP"
+          )
           loader.setup
         end
       end

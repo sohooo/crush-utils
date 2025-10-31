@@ -24,6 +24,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_runtime_dependency "zeitwerk", ">= 2.6"
+  spec.add_runtime_dependency "mcp", ">= 0.4.0"
 
   spec.add_development_dependency "bundler", ">= 2.0"
   spec.add_development_dependency "rake", ">= 13.0"
