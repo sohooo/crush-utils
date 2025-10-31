@@ -1,0 +1,11 @@
+---
+instructions:
+  general:
+    - "Keep Ruby files frozen string literal enabled using `# frozen_string_literal: true`."
+    - "Use Minitest for new automated tests and keep them under the `test/` directory."
+    - "Avoid real network calls or shelling out to external services (GitLab, Mattermost, crush CLI) in tests—stub them instead."
+    - "Prefer dependency injection and small helpers so flows remain testable."
+  testing:
+    - "Run `bundle exec rake test` before committing."
+    - "Every change to a flow or CLI entrypoint must include or update tests that cover the new behaviour."
+    - "When adding configuration or environment-dependent code, add regression tests that exercise the expected validation path."
