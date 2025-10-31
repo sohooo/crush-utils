@@ -153,9 +153,10 @@ class WeeklyPulseFlowTest < Minitest::Test
       assert_equal 1, commit_stats.fetch("count")
       assert_equal "Dev", commit_stats.fetch("authors").first.fetch("name")
 
-      log_path = Dir[log_root.join("pulse", "weekly", "*.json")].first
+      log_path = Dir[log_root.join("sessions", "pulse.weekly", "*.json")].first
       refute_nil log_path
       log_payload = JSON.parse(File.read(log_path))
+      assert_equal "pulse.weekly", log_payload.fetch("flow")
       assert_equal ["Engineering"], log_payload.dig("inputs", "groups")
       assert_equal 1, log_payload.dig("outputs", "groups").length
       assert_equal "Generated summary 2", log_payload.dig("outputs", "overall", "summary")
