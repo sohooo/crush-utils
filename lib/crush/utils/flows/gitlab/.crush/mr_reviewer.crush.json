@@ -17,6 +17,19 @@
       ]
     }
   },
+  "mcp": {
+    "gitlab": {
+      "type": "stdio",
+      "command": "bundle",
+      "args": [
+        "exec",
+        "ruby",
+        "bin/gitlab-mcp"
+      ],
+      "timeout": 300,
+      "disabled": false
+    }
+  },
   "options": {
     "disable_provider_auto_update": true,
     "disable_metrics": true,

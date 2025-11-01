@@ -1,0 +1,9 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "bundler/setup"
+require "crush/utils/gitlab_mcp"
+
+server = Crush::Utils::GitlabMCP::Server.new
+transport = MCP::Server::Transports::StdioTransport.new(server)
+transport.open
