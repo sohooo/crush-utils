@@ -7,7 +7,7 @@ Usage: $0 <gitlab-group-path-or-id> [output-file]
 
 Environment variables:
   GITLAB_BASE_URL   Base URL of the GitLab instance (default: https://gitlab.com)
-  GITLAB_TOKEN      Personal access token with API scope (if not authenticated via glab)
+  GITLAB_TOKEN      Personal access token with API scope
   PULSE_DAYS        Number of days to include in the snapshot (default: 7)
 USAGE
 }
@@ -17,21 +17,23 @@ if [[ $# -lt 1 || $# -gt 2 ]]; then
   exit 1
 fi
 
-if ! command -v glab >/dev/null 2>&1; then
-  echo "Error: glab CLI is required." >&2
-  exit 1
-fi
-
-if ! command -v jq >/dev/null 2>&1; then
-  echo "Error: jq is required." >&2
-  exit 1
-fi
-
 GROUP_INPUT="$1"
 OUTPUT_PATH="${2:-}"
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+# shellcheck source=../common.sh
+source "$SCRIPT_DIR/../common.sh"
+
+load_repo_env "$REPO_DIR"
+
+require_commands curl jq
+
 BASE_URL="${GITLAB_BASE_URL:-https://gitlab.com}"
 DAYS="${PULSE_DAYS:-7}"
+
+init_gitlab_api "$BASE_URL"
 
 if ! [[ "$DAYS" =~ ^[0-9]+$ ]]; then
   echo "Error: PULSE_DAYS must be an integer (received '$DAYS')." >&2
@@ -45,12 +47,6 @@ if ! SINCE_DATE="$(date -u -d "${DAYS} days ago" +"%Y-%m-%d" 2>/dev/null)"; then
   exit 1
 fi
 
-urlencode() {
-  jq -nr --arg value "$1" '$value | @uri'
-}
-
-GROUP_ENCODED="$(urlencode "$GROUP_INPUT")"
-
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
@@ -59,26 +55,13 @@ ISSUES_JSON_PATH="$TMP_DIR/issues.json"
 MRS_JSON_PATH="$TMP_DIR/mrs.json"
 COMMITS_JSON_PATH="$TMP_DIR/commits.json"
 
-GLAB_HOSTNAME="${BASE_URL#*://}"
-GLAB_HOSTNAME="${GLAB_HOSTNAME%%/}"
+GROUP_ENCODED="$(urlencode "$GROUP_INPUT")"
 
-GLAB_ARGS=(api)
-if [[ -n "$GLAB_HOSTNAME" ]]; then
-  GLAB_ARGS+=(--hostname "$GLAB_HOSTNAME")
+if ! gitlab_api_get "/groups/$GROUP_ENCODED" >"$GROUP_JSON_PATH"; then
+  echo "Error: unable to resolve group '$GROUP_INPUT'." >&2
+  exit 1
 fi
 
-glab_api() {
-  glab "${GLAB_ARGS[@]}" "$@"
-}
-
-if ! glab auth status >/dev/null 2>&1; then
-  if [[ -z "${GITLAB_TOKEN:-}" ]]; then
-    echo "Error: glab is not authenticated. Run 'glab auth login' or set GITLAB_TOKEN." >&2
-    exit 1
-  fi
-fi
-
-glab_api "/groups/$GROUP_ENCODED" >"$GROUP_JSON_PATH"
 GROUP_ID="$(jq -r '.id' "$GROUP_JSON_PATH")"
 
 if [[ -z "$GROUP_ID" || "$GROUP_ID" == "null" ]]; then
@@ -86,27 +69,36 @@ if [[ -z "$GROUP_ID" || "$GROUP_ID" == "null" ]]; then
   exit 1
 fi
 
-glab_api \
-  --field "created_after=$SINCE_DATE" \
-  --field "per_page=100" \
-  --field "order_by=created_at" \
-  --field "sort=desc" \
-  "/groups/$GROUP_ID/issues" >"$ISSUES_JSON_PATH"
+if ! gitlab_api_get \
+  "/groups/$GROUP_ID/issues" \
+  "created_after=$(urlencode "$SINCE_DATE")" \
+  "per_page=100" \
+  "order_by=created_at" \
+  "sort=desc" >"$ISSUES_JSON_PATH"; then
+  echo "Error: failed to fetch issues for group '$GROUP_INPUT'." >&2
+  exit 1
+fi
 
-glab_api \
-  --field "state=merged" \
-  --field "updated_after=$SINCE_DATE" \
-  --field "per_page=100" \
-  --field "order_by=updated_at" \
-  --field "sort=desc" \
-  "/groups/$GROUP_ID/merge_requests" >"$MRS_JSON_PATH"
+if ! gitlab_api_get \
+  "/groups/$GROUP_ID/merge_requests" \
+  "state=merged" \
+  "updated_after=$(urlencode "$SINCE_DATE")" \
+  "per_page=100" \
+  "order_by=updated_at" \
+  "sort=desc" >"$MRS_JSON_PATH"; then
+  echo "Error: failed to fetch merge requests for group '$GROUP_INPUT'." >&2
+  exit 1
+fi
 
-glab_api \
-  --field "action=pushed" \
-  --field "after=$SINCE_DATE" \
-  --field "per_page=100" \
-  --field "sort=desc" \
-  "/groups/$GROUP_ID/events" >"$COMMITS_JSON_PATH"
+if ! gitlab_api_get \
+  "/groups/$GROUP_ID/events" \
+  "action=pushed" \
+  "after=$(urlencode "$SINCE_DATE")" \
+  "per_page=100" \
+  "sort=desc" >"$COMMITS_JSON_PATH"; then
+  echo "Error: failed to fetch commit activity for group '$GROUP_INPUT'." >&2
+  exit 1
+fi
 
 if [[ -z "$OUTPUT_PATH" ]]; then
   SAFE_GROUP="${GROUP_INPUT//\//-}"
