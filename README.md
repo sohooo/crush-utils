@@ -5,12 +5,13 @@ This repository contains Crush flows for GitLab-focused workflows.
 ## Available Flows
 
 ### Merge Request Review
-Use the helper script to review a GitLab merge request with Crush. The script requires both the [`crush`](https://github.com/crush-org/crush) and [`glab`](https://gitlab.com/gitlab-org/cli) CLIs in your `PATH`:
+Use the helper script to review a GitLab merge request with Crush. Ensure [`crush`](https://github.com/crush-org/crush), `curl`, and `jq` are available and export a `GITLAB_TOKEN` with access to the target project:
 
 ```bash
+export GITLAB_TOKEN=xxx
 ./flows/review_mr/review_mr.sh "https://gitlab.com/your/project/-/merge_requests/123"
 ```
-The script loads environment defaults, stages the merge-request URL as context, and launches the `flows/review_mr` Crush pipeline.
+The script loads environment defaults, pulls metadata, discussions, diffs, and commit details directly from the GitLab API, stages them as context, and launches the `flows/review_mr` Crush pipeline.
 
 ### Weekly Pulse Snapshot
 Generate a JSON snapshot of recent GitLab activity for a group (requires `curl`, `jq`, and GNU `date`):

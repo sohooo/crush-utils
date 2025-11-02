@@ -7,7 +7,7 @@ Usage: $0 <gitlab-username> [days]
 
 Environment variables:
   GITLAB_BASE_URL   Base URL of the GitLab instance (default: https://gitlab.com)
-  GITLAB_TOKEN      Personal access token with API scope (if not authenticated via glab)
+  GITLAB_TOKEN      Personal access token with API scope
 USAGE
 }
 
@@ -16,24 +16,11 @@ if [[ $# -lt 1 || $# -gt 2 ]]; then
   exit 1
 fi
 
-if ! command -v crush >/dev/null 2>&1; then
-  echo "Error: the 'crush' CLI is not available in PATH." >&2
-  exit 1
-fi
-
-if ! command -v glab >/dev/null 2>&1; then
-  echo "Error: the 'glab' CLI is not available in PATH." >&2
-  echo "Install it from https://gitlab.com/gitlab-org/cli#installation" >&2
-  exit 1
-fi
-
-if ! command -v jq >/dev/null 2>&1; then
-  echo "Error: the 'jq' CLI is required." >&2
-  exit 1
-fi
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+# shellcheck source=../common.sh
+source "$SCRIPT_DIR/../common.sh"
 
 USERNAME="$1"
 DAYS="${2:-7}"
@@ -43,14 +30,13 @@ if ! [[ "$DAYS" =~ ^[0-9]+$ ]]; then
   exit 1
 fi
 
+load_repo_env "$REPO_DIR"
+
+require_commands crush curl jq
+
 BASE_URL="${GITLAB_BASE_URL:-https://gitlab.com}"
 
-if [[ -f "$REPO_DIR/.env" ]]; then
-  set -a
-  # shellcheck disable=SC1091
-  source "$REPO_DIR/.env"
-  set +a
-fi
+init_gitlab_api "$BASE_URL"
 
 TMP_DIR="$(mktemp -d)"
 cleanup() {
@@ -58,37 +44,13 @@ cleanup() {
 }
 trap cleanup EXIT
 
-GLAB_HOSTNAME="${BASE_URL#*://}"
-GLAB_HOSTNAME="${GLAB_HOSTNAME%%/}"
-
-GLAB_ARGS=(api)
-if [[ -n "$GLAB_HOSTNAME" ]]; then
-  GLAB_ARGS+=(--hostname "$GLAB_HOSTNAME")
-fi
-
-glab_api() {
-  glab "${GLAB_ARGS[@]}" "$@"
-}
-
-GLAB_STATUS_ARGS=()
-if [[ -n "$GLAB_HOSTNAME" ]]; then
-  GLAB_STATUS_ARGS+=(--hostname "$GLAB_HOSTNAME")
-fi
-
-if ! glab auth status "${GLAB_STATUS_ARGS[@]}" >/dev/null 2>&1; then
-  if [[ -z "${GITLAB_TOKEN:-}" ]]; then
-    echo "Error: glab is not authenticated. Run 'glab auth login' or set GITLAB_TOKEN." >&2
-    exit 1
-  fi
-fi
-
 USER_JSON_PATH="$TMP_DIR/user.json"
 EVENTS_JSON_PATH="$TMP_DIR/events_raw.json"
 OVERVIEW_PATH="$TMP_DIR/context_overview.txt"
 
-if ! glab_api \
-  --field "username=$USERNAME" \
-  "/users" >"$USER_JSON_PATH"; then
+if ! gitlab_api_get \
+  "/users" \
+  "username=$(urlencode "$USERNAME")" >"$USER_JSON_PATH"; then
   echo "Error: failed to resolve GitLab user '$USERNAME'." >&2
   exit 1
 fi
@@ -106,12 +68,11 @@ if ! SINCE_UTC="$(date -u -d "${DAYS} days ago" +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/nul
   exit 1
 fi
 
-if ! glab_api \
-  --field "after=$SINCE_UTC" \
-  --field "per_page=100" \
-  --field "sort=desc" \
-  --paginate \
-  "/users/$USER_ID/events" >"$EVENTS_JSON_PATH"; then
+if ! gitlab_api_get \
+  "/users/$USER_ID/events" \
+  "after=$(urlencode "$SINCE_UTC")" \
+  "per_page=100" \
+  "sort=desc" >"$EVENTS_JSON_PATH"; then
   echo "Error: failed to fetch activity for user '$USERNAME'." >&2
   exit 1
 fi
