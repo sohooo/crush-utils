@@ -22,3 +22,12 @@ export GITLAB_TOKEN=xxx
 The script queries issues created, merge requests merged, and push events from the last seven days (configurable with `PULSE_DAYS`) and writes a ready-to-summarise JSON file.
 
 See each flow's README under `flows/<flow-name>/` for full details.
+
+### User Activity Overview
+Collect recent GitLab events for a specific user and launch Crush to summarise the highlights:
+
+```bash
+./flows/user_activity/user_activity.sh username [days]
+```
+
+The script resolves the user, gathers activity from the past `days` (default `7`), stages structured JSON and text context, then opens the `flows/user_activity` Crush pipeline to produce a concise activity report.
