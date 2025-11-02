@@ -5,7 +5,7 @@ This repository contains Crush flows for GitLab-focused workflows.
 ## Available Flows
 
 ### Merge Request Review
-Use the helper script to review a GitLab merge request with Crush:
+Use the helper script to review a GitLab merge request with Crush. The script requires both the [`crush`](https://github.com/crush-org/crush) and [`glab`](https://gitlab.com/gitlab-org/cli) CLIs in your `PATH`:
 
 ```bash
 ./flows/review_mr/review_mr.sh "https://gitlab.com/your/project/-/merge_requests/123"
