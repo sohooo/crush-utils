@@ -7,7 +7,7 @@ Usage: $0 <gitlab-group-path-or-id> [output-file]
 
 Environment variables:
   GITLAB_BASE_URL   Base URL of the GitLab instance (default: https://gitlab.com)
-  GITLAB_TOKEN      Personal access token with API scope (required)
+  GITLAB_TOKEN      Personal access token with API scope (if not authenticated via glab)
   PULSE_DAYS        Number of days to include in the snapshot (default: 7)
 USAGE
 }
@@ -17,18 +17,13 @@ if [[ $# -lt 1 || $# -gt 2 ]]; then
   exit 1
 fi
 
-if ! command -v curl >/dev/null 2>&1; then
-  echo "Error: curl is required." >&2
+if ! command -v glab >/dev/null 2>&1; then
+  echo "Error: glab CLI is required." >&2
   exit 1
 fi
 
 if ! command -v jq >/dev/null 2>&1; then
   echo "Error: jq is required." >&2
-  exit 1
-fi
-
-if [[ -z "${GITLAB_TOKEN:-}" ]]; then
-  echo "Error: GITLAB_TOKEN must be set." >&2
   exit 1
 fi
 
@@ -55,8 +50,6 @@ urlencode() {
 }
 
 GROUP_ENCODED="$(urlencode "$GROUP_INPUT")"
-API_BASE="$BASE_URL/api/v4"
-CURL_OPTS=(--silent --show-error --fail -H "PRIVATE-TOKEN: $GITLAB_TOKEN")
 
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
@@ -66,7 +59,26 @@ ISSUES_JSON_PATH="$TMP_DIR/issues.json"
 MRS_JSON_PATH="$TMP_DIR/mrs.json"
 COMMITS_JSON_PATH="$TMP_DIR/commits.json"
 
-curl "${CURL_OPTS[@]}" "$API_BASE/groups/$GROUP_ENCODED" >"$GROUP_JSON_PATH"
+GLAB_HOSTNAME="${BASE_URL#*://}"
+GLAB_HOSTNAME="${GLAB_HOSTNAME%%/}"
+
+GLAB_ARGS=(api)
+if [[ -n "$GLAB_HOSTNAME" ]]; then
+  GLAB_ARGS+=(--hostname "$GLAB_HOSTNAME")
+fi
+
+glab_api() {
+  glab "${GLAB_ARGS[@]}" "$@"
+}
+
+if ! glab auth status >/dev/null 2>&1; then
+  if [[ -z "${GITLAB_TOKEN:-}" ]]; then
+    echo "Error: glab is not authenticated. Run 'glab auth login' or set GITLAB_TOKEN." >&2
+    exit 1
+  fi
+fi
+
+glab_api "/groups/$GROUP_ENCODED" >"$GROUP_JSON_PATH"
 GROUP_ID="$(jq -r '.id' "$GROUP_JSON_PATH")"
 
 if [[ -z "$GROUP_ID" || "$GROUP_ID" == "null" ]]; then
@@ -74,13 +86,27 @@ if [[ -z "$GROUP_ID" || "$GROUP_ID" == "null" ]]; then
   exit 1
 fi
 
-ISSUES_URL="$API_BASE/groups/$GROUP_ID/issues?created_after=$SINCE_DATE&per_page=100&order_by=created_at&sort=desc"
-MRS_URL="$API_BASE/groups/$GROUP_ID/merge_requests?state=merged&updated_after=$SINCE_DATE&per_page=100&order_by=updated_at&sort=desc"
-COMMITS_URL="$API_BASE/groups/$GROUP_ID/events?action=pushed&after=$SINCE_DATE&per_page=100&sort=desc"
+glab_api \
+  --field "created_after=$SINCE_DATE" \
+  --field "per_page=100" \
+  --field "order_by=created_at" \
+  --field "sort=desc" \
+  "/groups/$GROUP_ID/issues" >"$ISSUES_JSON_PATH"
 
-curl "${CURL_OPTS[@]}" "$ISSUES_URL" >"$ISSUES_JSON_PATH"
-curl "${CURL_OPTS[@]}" "$MRS_URL" >"$MRS_JSON_PATH"
-curl "${CURL_OPTS[@]}" "$COMMITS_URL" >"$COMMITS_JSON_PATH"
+glab_api \
+  --field "state=merged" \
+  --field "updated_after=$SINCE_DATE" \
+  --field "per_page=100" \
+  --field "order_by=updated_at" \
+  --field "sort=desc" \
+  "/groups/$GROUP_ID/merge_requests" >"$MRS_JSON_PATH"
+
+glab_api \
+  --field "action=pushed" \
+  --field "after=$SINCE_DATE" \
+  --field "per_page=100" \
+  --field "sort=desc" \
+  "/groups/$GROUP_ID/events" >"$COMMITS_JSON_PATH"
 
 if [[ -z "$OUTPUT_PATH" ]]; then
   SAFE_GROUP="${GROUP_INPUT//\//-}"

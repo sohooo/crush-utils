@@ -3,10 +3,9 @@
 Collect GitLab activity for a group and store it as a JSON snapshot that Crush can summarise later.
 
 ## Requirements
-- `curl`
+- [`glab`](https://gitlab.com/gitlab-org/cli) authenticated for the target instance (use `glab auth login` or set `GITLAB_TOKEN`)
 - `jq`
 - GNU `date` (supports `-d`; e.g. `gdate` from coreutils on macOS should be linked as `date`)
-- `GITLAB_TOKEN` environment variable with API access to the target group
 
 Optional environment variables:
 - `GITLAB_BASE_URL` (defaults to `https://gitlab.com`)
@@ -18,7 +17,7 @@ Optional environment variables:
 ```
 Examples:
 ```bash
-export GITLAB_TOKEN=xxx
+glab auth login --stdin <token.txt
 ./flows/pulse/pulse.sh platform
 ./flows/pulse/pulse.sh apps /tmp/apps-pulse.json
 ```
