@@ -13,7 +13,7 @@ Use the helper script to review a GitLab merge request with Crush:
 The script loads environment defaults, stages the merge-request URL as context, and launches the `flows/review_mr` Crush pipeline.
 
 ### Weekly Pulse Snapshot
-Generate a JSON snapshot of recent GitLab activity for a group:
+Generate a JSON snapshot of recent GitLab activity for a group (requires `curl`, `jq`, and GNU `date`):
 
 ```bash
 export GITLAB_TOKEN=xxx
