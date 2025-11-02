@@ -5,6 +5,7 @@ Collect GitLab activity for a group and store it as a JSON snapshot that Crush c
 ## Requirements
 - `curl`
 - `jq`
+- GNU `date` (supports `-d`; e.g. `gdate` from coreutils on macOS should be linked as `date`)
 - `GITLAB_TOKEN` environment variable with API access to the target group
 
 Optional environment variables:

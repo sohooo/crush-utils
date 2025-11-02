@@ -45,26 +45,10 @@ fi
 
 NOW_UTC="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 
-compute_since_date() {
-  local days="$1"
-  local gnu_date
-  local bsd_date
-
-  if gnu_date="$(date -u -d "${days} days ago" +"%Y-%m-%d" 2>/dev/null)"; then
-    printf '%s' "$gnu_date"
-    return 0
-  fi
-
-  if bsd_date="$(TZ=UTC date -v-"${days}"d +"%Y-%m-%d" 2>/dev/null)"; then
-    printf '%s' "$bsd_date"
-    return 0
-  fi
-
-  echo "Error: unable to compute date offset; ensure GNU date or BSD date is available." >&2
+if ! SINCE_DATE="$(date -u -d "${DAYS} days ago" +"%Y-%m-%d" 2>/dev/null)"; then
+  echo "Error: GNU date is required (missing \"-d\" support)." >&2
   exit 1
-}
-
-SINCE_DATE="$(compute_since_date "$DAYS")"
+fi
 
 urlencode() {
   jq -nr --arg value "$1" '$value | @uri'
