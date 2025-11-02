@@ -5,7 +5,7 @@
 GITLAB_AUTH_HEADER=()
 
 error() {
-  echo "Error: $*" >&2
+  echo "Fehler: $*" >&2
 }
 
 require_commands() {
@@ -17,7 +17,7 @@ require_commands() {
   done
 
   if [[ ${#missing[@]} -gt 0 ]]; then
-    error "the following required command(s) are missing: ${missing[*]}"
+    error "Die folgenden erforderlichen Befehle fehlen: ${missing[*]}"
     exit 1
   fi
 }
@@ -31,7 +31,7 @@ require_env_vars() {
   done
 
   if [[ ${#missing[@]} -gt 0 ]]; then
-    error "the following environment variable(s) must be set: ${missing[*]}"
+    error "Die folgenden Umgebungsvariablen müssen gesetzt sein: ${missing[*]}"
     exit 1
   fi
 }
@@ -62,7 +62,7 @@ init_gitlab_api() {
 
 _gitlab_require_initialized() {
   if [[ -z "${GITLAB_API_BASE:-}" || ${#GITLAB_AUTH_HEADER[@]} -eq 0 ]]; then
-    error "GitLab API helpers have not been initialised (call init_gitlab_api)."
+    error "Die GitLab-API-Hilfsfunktionen wurden nicht initialisiert (rufe init_gitlab_api auf)."
     exit 1
   fi
 }

@@ -1,29 +1,29 @@
-# Pulse Flow
+# Pulse-Flow
 
-Collect GitLab activity for a group and store it as a JSON snapshot that Crush can summarise later.
+Sammle GitLab-Aktivitäten für eine Gruppe und speichere sie als JSON-Snapshot, den Crush später zusammenfassen kann.
 
-## Requirements
+## Voraussetzungen
 - `curl`
 - `jq`
-- GNU `date` (supports `-d`; e.g. `gdate` from coreutils on macOS should be linked as `date`)
-- `GITLAB_TOKEN` exported with API access to the GitLab instance
+- GNU `date` (unterstützt `-d`; z. B. `gdate` aus den coreutils auf macOS sollte als `date` verlinkt sein)
+- `GITLAB_TOKEN`, exportiert mit API-Zugriff auf die GitLab-Instanz
 
-Optional environment variables:
-- `GITLAB_BASE_URL` (defaults to `https://gitlab.com`)
-- `PULSE_DAYS` (defaults to `7`)
+Optionale Umgebungsvariablen:
+- `GITLAB_BASE_URL` (Standard: `https://gitlab.com`)
+- `PULSE_DAYS` (Standard: `7`)
 
-## Usage
+## Verwendung
 ```bash
-./flows/pulse/pulse.sh gitlab-group-path [output-file]
+./flows/pulse/pulse.sh gitlab-gruppenpfad [ausgabedatei]
 ```
-Examples:
+Beispiele:
 ```bash
 export GITLAB_TOKEN=xxx
 ./flows/pulse/pulse.sh platform
 ./flows/pulse/pulse.sh apps /tmp/apps-pulse.json
 ```
 
-The script resolves the group ID, fetches issues created, merge requests merged, and push events from the past `PULSE_DAYS` days, then saves them with handy counts:
+Das Skript ermittelt die Gruppen-ID, lädt erstellte Issues, gemergte Merge-Requests und Push-Ereignisse der vergangenen `PULSE_DAYS` Tage und speichert sie mitsamt praktischen Zählwerten:
 ```json
 {
   "group": {"id": 42, "full_path": "platform"},
@@ -35,9 +35,9 @@ The script resolves the group ID, fetches issues created, merge requests merged,
 }
 ```
 
-## Core Ideas from the Weekly Pulse Discussion
-- Gather weekly GitLab activity (issues, merged MRs, commit pushes) per group through the REST API.
-- Aggregate the JSON locally so Crush can analyse it without re-querying GitLab.
-- Let Crush turn each snapshot into a leadership-friendly summary (Markdown works great).
-- Optionally enrich with lightweight stats and publish the summary where your team reads it (Mattermost, GitLab wiki, etc.).
-- Keep the snapshots so you can compare trendlines across weeks.
+## Zentrale Ideen aus der Weekly-Pulse-Diskussion
+- Sammle wöchentliche GitLab-Aktivitäten (Issues, gemergte MRs, Commit-Pushes) pro Gruppe über die REST-API.
+- Aggregiere die JSON-Daten lokal, damit Crush sie analysieren kann, ohne GitLab erneut abzufragen.
+- Lass Crush jeden Snapshot in eine führungstaugliche Zusammenfassung verwandeln (Markdown eignet sich hervorragend).
+- Ergänze die Zusammenfassung bei Bedarf um leichte Statistiken und veröffentliche sie dort, wo dein Team liest (Mattermost, GitLab-Wiki usw.).
+- Bewahre die Snapshots auf, damit ihr Trends über mehrere Wochen vergleichen könnt.

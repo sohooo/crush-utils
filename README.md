@@ -1,34 +1,34 @@
-# Crush Utilities
+# Crush-Dienstprogramme
 
-This repository contains Crush flows for GitLab-focused workflows.
+Dieses Repository enthält Crush-Flows für GitLab-orientierte Arbeitsabläufe.
 
-## Available Flows
+## Verfügbare Flows
 
-### Merge Request Review
-Use the helper script to review a GitLab merge request with Crush. Ensure [`crush`](https://github.com/crush-org/crush), `curl`, and `jq` are available and export a `GITLAB_TOKEN` with access to the target project:
-
-```bash
-export GITLAB_TOKEN=xxx
-./flows/review_mr/review_mr.sh "https://gitlab.com/your/project/-/merge_requests/123"
-```
-The script loads environment defaults, pulls metadata, discussions, diffs, and commit details directly from the GitLab API, stages them as context, and launches the `flows/review_mr` Crush pipeline.
-
-### Weekly Pulse Snapshot
-Generate a JSON snapshot of recent GitLab activity for a group (requires `curl`, `jq`, and GNU `date`):
+### Merge-Request-Review
+Nutze das Hilfsskript, um einen GitLab-Merge-Request mit Crush zu prüfen. Stelle sicher, dass [`crush`](https://github.com/crush-org/crush), `curl` und `jq` vorhanden sind, und exportiere einen `GITLAB_TOKEN` mit Zugriff auf das Zielprojekt:
 
 ```bash
 export GITLAB_TOKEN=xxx
-./flows/pulse/pulse.sh your-group-path
+./flows/review_mr/review_mr.sh "https://gitlab.com/dein/projekt/-/merge_requests/123"
 ```
-The script queries issues created, merge requests merged, and push events from the last seven days (configurable with `PULSE_DAYS`) and writes a ready-to-summarise JSON file.
+Das Skript lädt Umgebungsstandardwerte, ruft Metadaten, Diskussionen, Diffs und Commit-Details direkt über die GitLab-API ab, bereitet sie als Kontext auf und startet anschließend die Crush-Pipeline `flows/review_mr`.
 
-See each flow's README under `flows/<flow-name>/` for full details.
-
-### User Activity Overview
-Collect recent GitLab events for a specific user and launch Crush to summarise the highlights:
+### Wöchentlicher Pulse-Snapshot
+Erzeuge einen JSON-Snapshot der aktuellen GitLab-Aktivität für eine Gruppe (benötigt `curl`, `jq` und GNU `date`):
 
 ```bash
-./flows/user_activity/user_activity.sh username [days]
+export GITLAB_TOKEN=xxx
+./flows/pulse/pulse.sh deine-gruppe
+```
+Das Skript fragt erstellte Issues, gemergte Merge-Requests und Push-Ereignisse der letzten sieben Tage ab (konfigurierbar über `PULSE_DAYS`) und schreibt eine JSON-Datei, die sofort zusammengefasst werden kann.
+
+Ausführliche Informationen findest du in den jeweiligen READMEs unter `flows/<flow-name>/`.
+
+### Überblick über Nutzeraktivitäten
+Sammle aktuelle GitLab-Ereignisse für eine bestimmte Person und starte Crush, um die Highlights zu zusammenzufassen:
+
+```bash
+./flows/user_activity/user_activity.sh nutzername [tage]
 ```
 
-The script resolves the user, gathers activity from the past `days` (default `7`), stages the raw GitLab API responses as context, then opens the `flows/user_activity` Crush pipeline to produce a concise activity report.
+Das Skript ermittelt den Nutzenden, sammelt Aktivitäten der vergangenen `tage` (Standard `7`), legt die Rohantworten der GitLab-API als Kontext ab und öffnet anschließend die Crush-Pipeline `flows/user_activity`, um einen kompakten Aktivitätsbericht zu erzeugen.

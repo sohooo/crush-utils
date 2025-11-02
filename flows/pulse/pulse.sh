@@ -3,12 +3,12 @@ set -euo pipefail
 
 usage() {
   cat <<USAGE >&2
-Usage: $0 <gitlab-group-path-or-id> [output-file]
+Aufruf: $0 <gitlab-gruppenpfad-oder-id> [ausgabedatei]
 
-Environment variables:
-  GITLAB_BASE_URL   Base URL of the GitLab instance (default: https://gitlab.com)
-  GITLAB_TOKEN      Personal access token with API scope
-  PULSE_DAYS        Number of days to include in the snapshot (default: 7)
+Umgebungsvariablen:
+  GITLAB_BASE_URL   Basis-URL der GitLab-Instanz (Standard: https://gitlab.com)
+  GITLAB_TOKEN      Personal Access Token mit API-Rechten
+  PULSE_DAYS        Anzahl der Tage, die im Snapshot enthalten sein sollen (Standard: 7)
 USAGE
 }
 
@@ -36,14 +36,14 @@ DAYS="${PULSE_DAYS:-7}"
 init_gitlab_api "$BASE_URL"
 
 if ! [[ "$DAYS" =~ ^[0-9]+$ ]]; then
-  echo "Error: PULSE_DAYS must be an integer (received '$DAYS')." >&2
+  echo "Fehler: PULSE_DAYS muss eine Ganzzahl sein (erhalten: '$DAYS')." >&2
   exit 1
 fi
 
 NOW_UTC="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 
 if ! SINCE_DATE="$(date -u -d "${DAYS} days ago" +"%Y-%m-%d" 2>/dev/null)"; then
-  echo "Error: GNU date is required (missing \"-d\" support)." >&2
+  echo "Fehler: GNU date wird benötigt (Unterstützung für \"-d\" fehlt)." >&2
   exit 1
 fi
 
@@ -58,14 +58,14 @@ COMMITS_JSON_PATH="$TMP_DIR/commits.json"
 GROUP_ENCODED="$(urlencode "$GROUP_INPUT")"
 
 if ! gitlab_api_get "/groups/$GROUP_ENCODED" >"$GROUP_JSON_PATH"; then
-  echo "Error: unable to resolve group '$GROUP_INPUT'." >&2
+  echo "Fehler: Die Gruppe '$GROUP_INPUT' konnte nicht ermittelt werden." >&2
   exit 1
 fi
 
 GROUP_ID="$(jq -r '.id' "$GROUP_JSON_PATH")"
 
 if [[ -z "$GROUP_ID" || "$GROUP_ID" == "null" ]]; then
-  echo "Error: unable to resolve group '$GROUP_INPUT'." >&2
+  echo "Fehler: Die Gruppe '$GROUP_INPUT' konnte nicht ermittelt werden." >&2
   exit 1
 fi
 
@@ -75,7 +75,7 @@ if ! gitlab_api_get \
   "per_page=100" \
   "order_by=created_at" \
   "sort=desc" >"$ISSUES_JSON_PATH"; then
-  echo "Error: failed to fetch issues for group '$GROUP_INPUT'." >&2
+  echo "Fehler: Die Issues für die Gruppe '$GROUP_INPUT' konnten nicht abgerufen werden." >&2
   exit 1
 fi
 
@@ -86,7 +86,7 @@ if ! gitlab_api_get \
   "per_page=100" \
   "order_by=updated_at" \
   "sort=desc" >"$MRS_JSON_PATH"; then
-  echo "Error: failed to fetch merge requests for group '$GROUP_INPUT'." >&2
+  echo "Fehler: Die Merge-Requests für die Gruppe '$GROUP_INPUT' konnten nicht abgerufen werden." >&2
   exit 1
 fi
 
@@ -96,7 +96,7 @@ if ! gitlab_api_get \
   "after=$(urlencode "$SINCE_DATE")" \
   "per_page=100" \
   "sort=desc" >"$COMMITS_JSON_PATH"; then
-  echo "Error: failed to fetch commit activity for group '$GROUP_INPUT'." >&2
+  echo "Fehler: Die Commit-Aktivität für die Gruppe '$GROUP_INPUT' konnte nicht abgerufen werden." >&2
   exit 1
 fi
 
@@ -130,4 +130,4 @@ jq -n \
     commits: $commits[0]
   }' >"$OUTPUT_PATH"
 
-echo "Saved pulse data to $OUTPUT_PATH"
+echo "Pulse-Daten wurden in $OUTPUT_PATH gespeichert"

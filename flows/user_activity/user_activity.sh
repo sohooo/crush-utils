@@ -3,11 +3,11 @@ set -euo pipefail
 
 usage() {
   cat <<USAGE >&2
-Usage: $0 <gitlab-username> [days]
+Aufruf: $0 <gitlab-nutzername> [tage]
 
-Environment variables:
-  GITLAB_BASE_URL   Base URL of the GitLab instance (default: https://gitlab.com)
-  GITLAB_TOKEN      Personal access token with API scope
+Umgebungsvariablen:
+  GITLAB_BASE_URL   Basis-URL der GitLab-Instanz (Standard: https://gitlab.com)
+  GITLAB_TOKEN      Personal Access Token mit API-Rechten
 USAGE
 }
 
@@ -26,7 +26,7 @@ USERNAME="$1"
 DAYS="${2:-7}"
 
 if ! [[ "$DAYS" =~ ^[0-9]+$ ]]; then
-  echo "Error: days must be an integer (received '$DAYS')." >&2
+  echo "Fehler: Die Anzahl der Tage muss eine Ganzzahl sein (erhalten: '$DAYS')." >&2
   exit 1
 fi
 
@@ -51,20 +51,20 @@ OVERVIEW_PATH="$TMP_DIR/context_overview.txt"
 if ! gitlab_api_get \
   "/users" \
   "username=$(urlencode "$USERNAME")" >"$USER_JSON_PATH"; then
-  echo "Error: failed to resolve GitLab user '$USERNAME'." >&2
+  echo "Fehler: Der GitLab-Nutzende '$USERNAME' konnte nicht ermittelt werden." >&2
   exit 1
 fi
 
 USER_ID="$(jq -r '.[0].id // empty' "$USER_JSON_PATH")"
 
 if [[ -z "$USER_ID" ]]; then
-  echo "Error: unable to find GitLab user '$USERNAME'." >&2
+  echo "Fehler: Der GitLab-Nutzende '$USERNAME' wurde nicht gefunden." >&2
   exit 1
 fi
 
 NOW_UTC="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 if ! SINCE_UTC="$(date -u -d "${DAYS} days ago" +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null)"; then
-  echo "Error: GNU date is required (missing \"-d\" support)." >&2
+  echo "Fehler: GNU date wird benötigt (Unterstützung für \"-d\" fehlt)." >&2
   exit 1
 fi
 
@@ -73,27 +73,27 @@ if ! gitlab_api_get \
   "after=$(urlencode "$SINCE_UTC")" \
   "per_page=100" \
   "sort=desc" >"$EVENTS_JSON_PATH"; then
-  echo "Error: failed to fetch activity for user '$USERNAME'." >&2
+  echo "Fehler: Die Aktivitäten für '$USERNAME' konnten nicht abgerufen werden." >&2
   exit 1
 fi
 
 USER_NAME="$(jq -r '.[0].name // .[0].username' "$USER_JSON_PATH")"
 
 cat <<CONTEXT >"$OVERVIEW_PATH"
-GitLab user activity capture
-============================
+Erfasste GitLab-Nutzeraktivität
+===============================
 
-User: $USER_NAME (@$USERNAME)
-Timeframe: last $DAYS day(s) ($SINCE_UTC to $NOW_UTC)
+Nutzer: $USER_NAME (@$USERNAME)
+Zeitraum: letzte $DAYS Tag(e) ($SINCE_UTC bis $NOW_UTC)
 
-Files included in this context directory:
-- user.json: Raw response for the user lookup
-- events_raw.json: Raw events returned by the GitLab API
+Dateien in diesem Kontextverzeichnis:
+- user.json: Rohantwort der Nutzersuche
+- events_raw.json: Rohe Ereignisse der GitLab-API
 
-Use these artefacts to produce a concise summary of the user's recent GitLab activity, highlight notable contributions, and flag any follow-ups. Refer directly to the raw events for details.
+Nutze diese Artefakte, um die jüngsten GitLab-Aktivitäten der Person prägnant zusammenzufassen, wichtige Beiträge hervorzuheben und eventuelle Folgeaufgaben zu markieren. Greife für Details direkt auf die rohen Ereignisse zu.
 CONTEXT
 
-PROMPT="You are an engineering lead reviewing recent GitLab activity for @$USERNAME over the past $DAYS day(s). Use the provided raw GitLab events to describe key contributions, themes, and recommended follow-ups. Be specific about repositories, merge requests, and issues where possible."
+PROMPT="Du bist eine technische Führungskraft und bewertest die GitLab-Aktivitäten von @$USERNAME der vergangenen $DAYS Tag(e). Nutze die bereitgestellten rohen GitLab-Ereignisse, um zentrale Beiträge, Themen und empfohlene Folgeaktionen zu beschreiben. Sei nach Möglichkeit konkret bei Repositories, Merge-Requests und Issues."
 
 export CRUSH_USER_ACTIVITY_USERNAME="$USERNAME"
 export CRUSH_USER_ACTIVITY_DAYS="$DAYS"
